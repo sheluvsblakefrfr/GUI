@@ -6412,7 +6412,7 @@ function Compkiller.new(Config : Window)
 	Compkiller:_DrawKeybinds(CompKiller);
 
 	UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-		local CurrentScale = MainUIScale.Scale;
+		local CurrentScale = (MainUIScale and MainUIScale.Scale) or (Compkiller.MainUIScale and Compkiller.MainUIScale.Scale) or 1;
 		TabButtonScrollingFrame.CanvasSize = UDim2.fromOffset(0,UIListLayout.AbsoluteContentSize.Y / CurrentScale)
 	end);
 
