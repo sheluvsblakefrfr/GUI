@@ -1573,9 +1573,6 @@ end;
 
 
 function Compkiller:_AddDragBlacklist(Frame: Frame)
-	local IsAdded = false;
-	local BASE_TIME = 0.01;
-
 	local SET_BLACKLIST = function(value)
 		local index = table.find(Compkiller.DragBlacklist , Frame);
 
@@ -1590,20 +1587,12 @@ function Compkiller:_AddDragBlacklist(Frame: Frame)
 		end;
 	end;
 
-	Frame.InputBegan:Connect(function(input)
-		if Compkiller:_IsMouseOverFrame(Frame) then
-			SET_BLACKLIST(true)
-		end;
+	Frame.MouseEnter:Connect(function()
+		SET_BLACKLIST(true)
 	end);
 
-	Frame.InputEnded:Connect(function(input)
+	Frame.MouseLeave:Connect(function()
 		SET_BLACKLIST(false);
-	end);
-
-	UserInputService.InputChanged:Connect(function()
-		if not Compkiller:_IsMouseOverFrame(Frame) then
-			SET_BLACKLIST(false);
-		end
 	end);
 end;
 
@@ -1685,9 +1674,12 @@ function Compkiller:Drag(InputFrame: Frame, MoveFrame: Frame, Speed : number)
 	local dragToggle: boolean = false;
 	local dragStart: Vector3 = nil;
 	local startPos: UDim2 = nil;
-	local Tween = TweenInfo.new(Speed);
+	local dragConnection = nil;
+	local endConnection = nil;
+	local Tween = TweenInfo.new(Speed or 0);
 
 	local updateInput = function(input)
+		if not dragToggle or not MoveFrame.Visible then return end
 		local CurrentScale = (Compkiller.MainUIScale and Compkiller.MainUIScale.Scale) or 1;
 		local delta = (input.Position - dragStart) / CurrentScale;
 		local position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
@@ -1702,43 +1694,50 @@ function Compkiller:Drag(InputFrame: Frame, MoveFrame: Frame, Speed : number)
 		end
 	end;
 
+	local function stopDrag()
+		dragToggle = false
+		Compkiller.IS_DRAG_MOVE = false
+		Compkiller.IaDrag = false
+		if dragConnection then
+			dragConnection:Disconnect()
+			dragConnection = nil
+		end
+		if endConnection then
+			endConnection:Disconnect()
+			endConnection = nil
+		end
+	end
+
 	InputFrame.InputBegan:Connect(function(input)
+		if not MoveFrame.Visible then return end
 		if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and #Compkiller.DragBlacklist <= 0 then 
 			dragToggle = true
 			dragStart = input.Position
 			startPos = MoveFrame.Position
-			input.Changed:Connect(function()
+			Compkiller.IaDrag = true
+			Compkiller.LastDrag = tick()
+
+			if dragConnection then dragConnection:Disconnect() end
+			if endConnection then endConnection:Disconnect() end
+
+			dragConnection = UserInputService.InputChanged:Connect(function(changedInput)
+				if changedInput.UserInputType == Enum.UserInputType.MouseMovement or changedInput.UserInputType == Enum.UserInputType.Touch then
+					if #Compkiller.DragBlacklist > 0 then
+						stopDrag()
+					else
+						Compkiller.IS_DRAG_MOVE = true
+						updateInput(changedInput)
+					end
+				end
+			end)
+
+			endConnection = input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
-					dragToggle = false;
-					Compkiller.IS_DRAG_MOVE = false;
+					stopDrag()
 				end
 			end)
 		end
-
-		if not Compkiller.IsDrage and dragToggle then
-			Compkiller.LastDrag = tick();
-		end;
-
-		Compkiller.IaDrag = dragToggle;
 	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch and #Compkiller.DragBlacklist <= 0 then
-			if dragToggle then
-				Compkiller.IS_DRAG_MOVE = true;
-				updateInput(input)
-			else
-				Compkiller.IS_DRAG_MOVE = false;
-			end
-		else
-			if #Compkiller.DragBlacklist > 0 then
-				dragToggle = false
-				Compkiller.IS_DRAG_MOVE = false;
-			end
-		end
-
-		Compkiller.IaDrag = dragToggle;
-	end);
 end;
 
 function Compkiller:_IsMobile()
@@ -6827,7 +6826,7 @@ function Compkiller.new(Config : Window)
 			WindowArgs.UserSettings.Signal = Signal;
 			WindowArgs.UserSettings.Signal = Compkiller:_Blur(UserSettings,Signal);
 
-			Compkiller:Drag(UserSettings , UserSettings, 0);
+			Compkiller:Drag(Header , UserSettings, 0);
 
 			UIListLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 				local CurrentScale = WindowArgs.MainUIScale.Scale;
