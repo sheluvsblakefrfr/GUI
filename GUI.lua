@@ -8,7 +8,7 @@
     Github: https://github.com/4lpaca-pin/CompKiller
     Original: compkiller.net
 
-        Version: 3.0 (Toava Edition)
+        Version: 3.0
     - Embedded Custom Metallic V Logo (Zero web dependencies)
     - O(1) Icon Query Memoization Cache (_GetIcon)
     - Removed game.Changed listener memory leak in _Blur
