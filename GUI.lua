@@ -10004,6 +10004,14 @@ function Compkiller.new(Config : Window)
 		end);
 	end);
 
+	
+	function WindowArgs:Unload()
+		if WindowArgs.Root then
+			pcall(function() WindowArgs.Root:Destroy() end)
+		end
+		Compkiller:Unload()
+	end
+
 	return WindowArgs;
 end;
 
@@ -10268,147 +10276,92 @@ function Compkiller:ConfigManager(ConfigManager: ConfigManager) : ConfigFunction
 	return Args;
 end;
 
-function Compkiller:Loader(IconId,Duration)
-	print("!!! COMPKILLER LOADER STARTED (NO ROTATION VERSION) !!!")
-	local CompKiller = Instance.new("ScreenGui")
+function Compkiller:Loader(TitleText, Duration)
+	local TweenService = game:GetService("TweenService")
+	local CoreGui = game:GetService("CoreGui")
+	local targetParent = (gethui and gethui()) or CoreGui
 
-	CompKiller.Name = Compkiller:_RandomString()
-	CompKiller.Parent = CoreGui
-	CompKiller.Enabled = true
-	CompKiller.ResetOnSpawn = false
-	CompKiller.IgnoreGuiInset = true
-	CompKiller.ZIndexBehavior = Enum.ZIndexBehavior.Global
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "Voidsens_CenterLoader"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.IgnoreGuiInset = true
+	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+	if syn and syn.protect_gui then pcall(syn.protect_gui, ScreenGui) end
+	ScreenGui.Parent = targetParent
 
-	local Loader = Instance.new("Frame")
-	local Icon = Instance.new("ImageLabel")
-	local Vignette = Instance.new("ImageLabel")
+	-- Middle Text: Grey, clean, matching UI
+	local CenterText = Instance.new("TextLabel")
+	CenterText.Name = "CenterText"
+	CenterText.Parent = ScreenGui
+	CenterText.AnchorPoint = Vector2.new(0.5, 0.5)
+	CenterText.Position = UDim2.new(0.5, 0, 0.5, 0)
+	CenterText.Size = UDim2.new(0, 320, 0, 40)
+	CenterText.BackgroundTransparency = 1
+	CenterText.Font = Enum.Font.GothamBold
+	CenterText.Text = "Voidsens Loading."
+	CenterText.TextColor3 = Color3.fromRGB(195, 195, 200)
+	CenterText.TextSize = 22
 
-	Loader.Name = Compkiller:_RandomString()
-	Loader.Parent = CompKiller
-	Loader.AnchorPoint = Vector2.new(0.5, 0.5)
-	Loader.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	Loader.BackgroundTransparency = 1
-	Loader.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Loader.BorderSizePixel = 0
-	Loader.Position = UDim2.new(0.5, 0, 0.5, 0)
-	Loader.Size = UDim2.new(1, 0, 1, 0)
+	-- Animated dots loop: . -> .. -> ... -> .
+	local isRunning = true
+	local dotCount = 1
+	task.spawn(function()
+		while isRunning do
+			if CenterText and CenterText.Parent then
+				CenterText.Text = "Voidsens Loading" .. string.rep(".", dotCount)
+			end
+			dotCount = (dotCount % 3) + 1
+			task.wait(0.35)
+		end
+	end)
 
-	Icon.Name = Compkiller:_RandomString()
-	Icon.Parent = Loader
-	Icon.AnchorPoint = Vector2.new(0.5, 0.5)
-	Icon.BackgroundTransparency = 1.000
-	Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Icon.BorderSizePixel = 0
-	Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
-	Icon.Size = UDim2.new(0, 300, 0, 300)
-	Icon.ZIndex = 100
-	Icon.Image = IconId or Compkiller.Logo;
-	Icon.ImageTransparency = 1
+	-- Bottom Bar: Sleek grey track at bottom
+	local BarBack = Instance.new("Frame")
+	BarBack.Name = "BarBack"
+	BarBack.Parent = ScreenGui
+	BarBack.AnchorPoint = Vector2.new(0.5, 0.5)
+	BarBack.Position = UDim2.new(0.5, 0, 0.88, 0)
+	BarBack.Size = UDim2.new(0, 320, 0, 4)
+	BarBack.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+	BarBack.BorderSizePixel = 0
 
-	Vignette.Name = Compkiller:_RandomString()
-	Vignette.Parent = Loader
-	Vignette.BackgroundTransparency = 1.000
-	Vignette.BorderColor3 = Color3.fromRGB(27, 42, 53)
-	Vignette.BorderSizePixel = 0
-	Vignette.Size = UDim2.new(1, 0, 1, 0)
-	Vignette.Image = Compkiller:CacheImage("rbxassetid://18720640102")
-	Vignette.ImageColor3 = Compkiller.Colors.Highlight
-	Vignette.ImageTransparency = 1
-	Vignette.AnchorPoint = Vector2.new(0.5,0.5)
-	Vignette.Position = UDim2.fromScale(0.5,0.5)
+	local BarBackCorner = Instance.new("UICorner")
+	BarBackCorner.CornerRadius = UDim.new(1, 0)
+	BarBackCorner.Parent = BarBack
 
-	Compkiller:_Animation(Loader,TweenInfo.new(0.55,Enum.EasingStyle.Quint),{
-		BackgroundTransparency = 0.5
-	});
+	local BarFill = Instance.new("Frame")
+	BarFill.Name = "BarFill"
+	BarFill.Parent = BarBack
+	BarFill.Size = UDim2.new(0, 0, 1, 0)
+	BarFill.BackgroundColor3 = Color3.fromRGB(165, 165, 175)
+	BarFill.BorderSizePixel = 0
 
-	local Event = Instance.new('BindableEvent');
+	local BarFillCorner = Instance.new("UICorner")
+	BarFillCorner.CornerRadius = UDim.new(1, 0)
+	BarFillCorner.Parent = BarFill
 
-	task.delay(0.5,function()
-		Compkiller:_Animation(Icon,TweenInfo.new(0.75,Enum.EasingStyle.Quint),{
-			ImageTransparency = 0.01,
-			Size = UDim2.new(0, 200, 0, 200)
-		});
+	local loadTime = Duration or 2.0
+	TweenService:Create(BarFill, TweenInfo.new(loadTime, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+		Size = UDim2.new(1, 0, 1, 0)
+	}):Play()
 
-		-- Loading Bar UI
-		local BarBackground = Instance.new("Frame")
-		local BarFill = Instance.new("Frame")
-		local BarCorner = Instance.new("UICorner")
-		local FillCorner = Instance.new("UICorner")
+	local Event = Instance.new("BindableEvent")
+	task.delay(loadTime + 0.1, function()
+		isRunning = false
+		local fadeInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+		TweenService:Create(CenterText, fadeInfo, { TextTransparency = 1 }):Play()
+		TweenService:Create(BarBack, fadeInfo, { BackgroundTransparency = 1 }):Play()
+		TweenService:Create(BarFill, fadeInfo, { BackgroundTransparency = 1 }):Play()
+		task.wait(0.45)
+		ScreenGui:Destroy()
+		Event:Fire()
+	end)
 
-		BarBackground.Name = "BarBackground"
-		BarBackground.Parent = Loader
-		BarBackground.AnchorPoint = Vector2.new(0.5, 1)
-		BarBackground.Position = UDim2.new(0.5, 0, 0.85, 0)
-		BarBackground.Size = UDim2.new(0, 300, 0, 4)
-		BarBackground.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-		BarBackground.BorderSizePixel = 0
-		BarBackground.BackgroundTransparency = 1
-
-		BarCorner.CornerRadius = UDim.new(1, 0)
-		BarCorner.Parent = BarBackground
-
-		BarFill.Name = "BarFill"
-		BarFill.Parent = BarBackground
-		BarFill.Size = UDim2.new(0, 0, 1, 0)
-		BarFill.BackgroundColor3 = Compkiller.Colors.Highlight
-		BarFill.BorderSizePixel = 0
-
-		FillCorner.CornerRadius = UDim.new(1, 0)
-		FillCorner.Parent = BarFill
-
-		-- Fade in Bar Background
-		Compkiller:_Animation(BarBackground, TweenInfo.new(0.5), {BackgroundTransparency = 0})
-
-		-- Animate Bar Fill
-		local loadTime = Duration or 4.5
-		Compkiller:_Animation(BarFill, TweenInfo.new(loadTime, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
-
-		task.delay(0.25,function()
-			Compkiller:_Animation(Vignette,TweenInfo.new(5),{
-				ImageTransparency = 0.2
-			});
-
-			task.wait(loadTime)
-
-			Compkiller:_Animation(Vignette,TweenInfo.new(3,Enum.EasingStyle.Quint,Enum.EasingDirection.InOut),{
-				Size = UDim2.new(2, 0, 2, 0)
-			});
-
-			Compkiller:_Animation(Icon,TweenInfo.new(0.75,Enum.EasingStyle.Quint,Enum.EasingDirection.InOut),{
-				ImageTransparency = 1,
-			});
-			
-			-- Fade out Bar
-			Compkiller:_Animation(BarBackground, TweenInfo.new(0.5), {BackgroundTransparency = 1})
-			Compkiller:_Animation(BarFill, TweenInfo.new(0.5), {BackgroundTransparency = 1})
-
-			Compkiller:_Animation(Loader,TweenInfo.new(1.5,Enum.EasingStyle.Quint,Enum.EasingDirection.InOut),{
-				BackgroundTransparency = 1
-			});
-
-			task.delay(0.1,function()
-				Compkiller:_Animation(Vignette,TweenInfo.new(1,Enum.EasingStyle.Quint,Enum.EasingDirection.InOut),{
-					ImageTransparency = 1
-				});
-
-				task.wait(0.2)
-
-				task.delay(3,function()
-					CompKiller:Destroy();
-				end)
-			end)
-
-			task.delay(0.6,function()
-				Event:Fire();
-			end)
-		end)
-	end);
-
-	return {
-		yield = function()
-			return Event.Event:Wait();
-		end	
-	};
+	local LoaderObj = {}
+	function LoaderObj.yield()
+		Event.Event:Wait()
+	end
+	return LoaderObj
 end;
 
 function Compkiller.newNotify()
@@ -10666,3 +10619,16 @@ end;
 Compkiller.NilFolder.Name = "Nil-Instances";
 
 return Compkiller;
+
+function Compkiller:Unload()
+	for _, win in ipairs(Compkiller.Windows) do
+		pcall(function() win:Destroy() end)
+	end
+	Compkiller.Windows = {}
+	local coreGui = game:GetService("CoreGui")
+	for _, child in pairs(coreGui:GetChildren()) do
+		if child.Name:find("CompKiller", 1, true) then
+			pcall(function() child:Destroy() end)
+		end
+	end
+end
