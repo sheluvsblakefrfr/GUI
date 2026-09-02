@@ -10618,8 +10618,6 @@ end;
 
 Compkiller.NilFolder.Name = "Nil-Instances";
 
-return Compkiller;
-
 function Compkiller:Unload()
 	for _, win in ipairs(Compkiller.Windows) do
 		pcall(function() win:Destroy() end)
@@ -10632,3 +10630,5 @@ function Compkiller:Unload()
 		end
 	end
 end
+
+return Compkiller;
