@@ -1613,22 +1613,31 @@ function Compkiller:_AddDragBlacklist(Frame: Frame)
 	end);
 end;
 
+local _windowElemCache = setmetatable({}, { __mode = "k" });
 function Compkiller:_GetWindowFromElement(Element)
+	if not Element then return nil end
+	local cached = _windowElemCache[Element];
+	if cached ~= nil then return cached end
+
 	if Compkiller.WindowsNil[Element] then
+		_windowElemCache[Element] = Compkiller.WindowsNil[Element];
 		return Compkiller.WindowsNil[Element];
 	end;
 
 	for i,v : ScreenGui in next , Compkiller.Windows do
 		if v and Element:IsDescendantOf(v) then
+			_windowElemCache[Element] = v;
 			return v;
 		end;
 	end;
 
 	for Frame,Window in next , Compkiller.WindowsNil do
 		if Element:IsDescendantOf(Frame) or Frame == Element then
+			_windowElemCache[Element] = Window;
 			return Window;
 		end;
 	end;
+	return nil;
 end;
 
 function Compkiller.__SIGNAL(default)
@@ -10623,12 +10632,16 @@ function Compkiller:Unload()
 		pcall(function() win:Destroy() end)
 	end
 	Compkiller.Windows = {}
-	local coreGui = game:GetService("CoreGui")
-	for _, child in pairs(coreGui:GetChildren()) do
-		if child.Name:find("CompKiller", 1, true) then
-			pcall(function() child:Destroy() end)
+	table.clear(Compkiller.WindowsNil)
+	table.clear(Compkiller.DragBlacklist)
+	local coreGui = (gethui and gethui()) or game:GetService("CoreGui")
+	pcall(function()
+		for _, child in pairs(coreGui:GetChildren()) do
+			if child.Name:find("CompKiller", 1, true) or child.Name:find("Voidsens", 1, true) then
+				pcall(function() child:Destroy() end)
+			end
 		end
-	end
+	end)
 end
 
 return Compkiller;
